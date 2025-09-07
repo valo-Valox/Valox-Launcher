@@ -1,0 +1,118 @@
+-- Multi-Hub Launcher for Roblox (Rayfield)
+-- Simple, clean, remembers last selection
+-- Replace URL placeholders with real raw script URLs
+
+-- safe cleanup of previous ui
+if getgenv().Rayfield and type(getgenv().Rayfield.Destroy) == "function" then
+    pcall(function() getgenv().Rayfield:Destroy() end)
+end
+getgenv().Rayfield = nil
+
+-- create Rayfield
+local ok, Rayfield = pcall(function()
+    return loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+end)
+if not ok or not Rayfield then
+    warn("Failed to load Rayfield")
+    return
+end
+getgenv().Rayfield = Rayfield
+
+local Window = Rayfield:CreateWindow({
+    Name = "Multi Hub Launcher",
+    LoadingTitle = "Launcher",
+    LoadingSubtitle = "by Valox",
+    Theme = "Ocean",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "MultiHubLauncher",
+        FileName = "LauncherConfig"
+    },
+    KeySystem = false
+})
+
+local Tab = Window:CreateTab("Hubs", "rewind")
+local Section = Tab:CreateSection("Select a hub to load")
+
+-- hub list (name -> url)
+local hubs = {
+    ["Valox Hub"]   = "https://raw.githubusercontent.com/valo-Valox/Valox-Hub/refs/heads/main/Valox%20Hub",
+    ["H4x Scripts"] = "https://raw.githubusercontent.com/H4xScripts/Loader/refs/heads/main/loader.lua",
+    ["VoidWare"]   = "https://raw.githubusercontent.com/VapeVoidware/VWExtra/main/NightsInTheForest.lua",
+    ["Infinite Yield"]= "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
+    ["Vertex"]  = "https://raw.githubusercontent.com/vertex-peak/vertex/refs/heads/main/loadstring"
+}
+
+-- quick-load buttons for each hub
+for _, name in ipairs(hubNames) do
+    Tab:CreateButton({
+        Name = "Load "..name,
+        Callback = function()
+            local url = hubs[name]
+            if not url or url == "" then
+                Rayfield:Notify({ Title = "Launcher", Content = "No URL set for "..name, Duration = 3 })
+                return
+            end
+            Rayfield:Notify({ Title = "Launcher", Content = "Loading "..name, Duration = 2 })
+            local ok, err = pcall(function()
+                local scriptText = game:HttpGet(url, true)
+                local fn = loadstring(scriptText)
+                if type(fn) == "function" then fn() end
+            end)
+            if not ok then
+                Rayfield:Notify({ Title = "Launcher", Content = "Failed to load "..name, Duration = 3 })
+                warn("Hub load error:", err)
+            else
+                Rayfield:Notify({ Title = "Launcher", Content = name.." loaded", Duration = 2 })
+            end
+        end
+    })
+end
+
+-- single button that loads the selected dropdown hub
+Tab:CreateButton({
+    Name = "Load Selected Hub",
+    Callback = function()
+        local sel = HubDropdown and HubDropdown.CurrentOption and HubDropdown.CurrentOption[1]
+        if not sel or sel == "" then
+            Rayfield:Notify({ Title = "Launcher", Content = "No hub selected", Duration = 2 })
+            return
+        end
+        local url = hubs[sel]
+        if not url then
+            Rayfield:Notify({ Title = "Launcher", Content = "No URL for "..sel, Duration = 3 })
+            return
+        end
+        Rayfield:Notify({ Title = "Launcher", Content = "Loading "..sel, Duration = 2 })
+        local ok, err = pcall(function()
+            local scriptText = game:HttpGet(url, true)
+            local fn = loadstring(scriptText)
+            if type(fn) == "function" then fn() end
+        end)
+        if not ok then
+            Rayfield:Notify({ Title = "Launcher", Content = "Failed to load "..sel, Duration = 3 })
+            warn("Hub load error:", err)
+        else
+            Rayfield:Notify({ Title = "Launcher", Content = sel.." loaded", Duration = 2 })
+        end
+    end
+})
+
+-- small utilities
+Tab:CreateButton({
+    Name = "Open hub URLs file (print)",
+    Callback = function()
+        print("Hub list:")
+        for n,u in pairs(hubs) do print(n, u) end
+        Rayfield:Notify({ Title = "Launcher", Content = "Hub list printed to console", Duration = 2 })
+    end
+})
+
+-- ensure saved config loads dropdown selection
+pcall(function() Rayfield:LoadConfiguration() end)
+
+Rayfield:Notify({
+    Title = "Multi Hub Launcher",
+    Content = "Ready. Choose a hub and press Load.",
+    Duration = 4
+})
