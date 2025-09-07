@@ -1,5 +1,5 @@
 -- Multi-Hub Launcher for Roblox (Rayfield)
--- Simple, clean button-based hub loader
+-- Clean button-based hub loader
 
 -- safe cleanup of previous ui
 if getgenv().Rayfield and type(getgenv().Rayfield.Destroy) == "function" then
@@ -7,16 +7,11 @@ if getgenv().Rayfield and type(getgenv().Rayfield.Destroy) == "function" then
 end
 getgenv().Rayfield = nil
 
--- create Rayfield
-local ok, Rayfield = pcall(function()
-    return loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-end)
-if not ok or not Rayfield then
-    warn("Failed to load Rayfield")
-    return
-end
+-- load Rayfield (use GitHub source instead of sirius.menu)
+local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
 getgenv().Rayfield = Rayfield
 
+-- create window
 local Window = Rayfield:CreateWindow({
     Name = "Multi Hub Launcher",
     LoadingTitle = "Launcher",
@@ -30,19 +25,59 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
+-- hubs tab
 local Tab = Window:CreateTab("Hubs", "rewind")
 Tab:CreateSection("Select a hub to load")
 
--- hub list (name -> url)
+-- hub list
 local hubs = {
-    ["Valox Hub"]     = "https://raw.githubusercontent.com/valo-Valox/Valox-Hub/refs/heads/main/Valox%20Hub",
-    ["H4x Scripts"]   = "https://raw.githubusercontent.com/H4xScripts/Loader/refs/heads/main/loader.lua",
-    ["VoidWare"]      = "https://raw.githubusercontent.com/VapeVoidware/VWExtra/main/NightsInTheForest.lua",
-    ["Infinite Yield"]= "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
-    ["Vertex"]        = "https://raw.githubusercontent.com/vertex-peak/vertex/refs/heads/main/loadstring"
+    ["Valox Hub"]      = "https://raw.githubusercontent.com/valo-Valox/Valox-Hub/refs/heads/main/Valox%20Hub",
+    ["H4x Scripts"]    = "https://raw.githubusercontent.com/H4xScripts/Loader/refs/heads/main/loader.lua",
+    ["VoidWare"]       = "https://raw.githubusercontent.com/VapeVoidware/VWExtra/main/NightsInTheForest.lua",
+    ["Infinite Yield"] = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
+    ["Vertex"]         = "https://raw.githubusercontent.com/vertex-peak/vertex/refs/heads/main/loadstring"
 }
 
--- create a button for each hub
+-- create button for each hub
 for name, url in pairs(hubs) do
     Tab:CreateButton({
-       
+        Name = "Load "..name,
+        Callback = function()
+            if not url or url == "" then
+                Rayfield:Notify({ Title = "Launcher", Content = "No URL set for "..name, Duration = 3 })
+                return
+            end
+            Rayfield:Notify({ Title = "Launcher", Content = "Loading "..name, Duration = 2 })
+            local ok, err = pcall(function()
+                local scriptText = game:HttpGet(url, true)
+                local fn = loadstring(scriptText)
+                if type(fn) == "function" then fn() end
+            end)
+            if not ok then
+                Rayfield:Notify({ Title = "Launcher", Content = "Failed to load "..name, Duration = 3 })
+                warn("Hub load error:", err)
+            else
+                Rayfield:Notify({ Title = "Launcher", Content = name.." loaded", Duration = 2 })
+            end
+        end
+    })
+end
+
+-- utility
+Tab:CreateButton({
+    Name = "Print Hub URLs",
+    Callback = function()
+        print("Hub list:")
+        for n,u in pairs(hubs) do print(n, u) end
+        Rayfield:Notify({ Title = "Launcher", Content = "Hub list printed to console", Duration = 2 })
+    end
+})
+
+-- load config
+pcall(function() Rayfield:LoadConfiguration() end)
+
+Rayfield:Notify({
+    Title = "Multi Hub Launcher",
+    Content = "Ready. Pick a hub and load it.",
+    Duration = 4
+})
