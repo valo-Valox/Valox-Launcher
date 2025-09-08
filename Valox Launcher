@@ -1,6 +1,3 @@
--- Multi-Hub Launcher for Roblox (Rayfield)
--- Simple, clean, remembers last selection
--- Replace URL placeholders with real raw script URLs
 
 -- safe cleanup of previous ui
 if getgenv().Rayfield and type(getgenv().Rayfield.Destroy) == "function" then
